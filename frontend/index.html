@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head> 
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPL Match Predictor</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>IPL Match Winner Predictor</h1>
+        <form id="predictionForm">
+            <div class="form-group">
+                <label for="team1">Team 1:</label>
+                <select id="team1" name="team1" required>
+                    <option value="">Select Team 1</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="team2">Team 2:</label>
+                <select id="team2" name="team2" required>
+                    <option value="">Select Team 2</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="toss_winner">Toss Winner:</label>
+                <select id="toss_winner" name="toss_winner" required>
+                    <option value="">Select Toss Winner</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="toss_decision">Toss Decision:</label>
+                <select id="toss_decision" name="toss_decision" required>
+                    <option value="">Select Decision</option>
+                    <option value="bat">Bat</option>
+                    <option value="field">Field</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="venue">Venue:</label>
+                <select id="venue" name="venue" required>
+                    <option value="">Select Venue</option>
+                </select>
+            </div>
+
+            <button type="submit" class="predict-btn">Predict Winner</button>
+        </form>
+
+        <div id="result" class="result hidden">
+            <h2>Prediction Result</h2>
+            <p id="predictionText"></p>
+        </div>
+
+        <div id="error" class="error hidden">
+            <p id="errorText"></p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
