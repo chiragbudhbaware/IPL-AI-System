@@ -1,4 +1,4 @@
-# IPL AI System Frontend
+# IPL AI System 
 
 A modern web interface for predicting IPL match winners using machine learning.
 
