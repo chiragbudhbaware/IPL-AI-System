@@ -148,23 +148,51 @@ document.getElementById('predictionForm').addEventListener('submit', async funct
         const result = await response.json();
 
         if (response.ok) {
-            // Handle both old and new response formats
-            let displayText = '';
-            if (result.prediction) {
-                // New format with ML model predictions
-                displayText = `<strong>${result.prediction}</strong>`;
+            // New UI: show a clear prediction and probability bars (if available)
+            const predictionEl = document.getElementById('predictionText');
+            const probContainer = document.getElementById('probabilities');
+            probContainer.innerHTML = '';
+
+                if (result.prediction) {
+                predictionEl.textContent = result.prediction;
+
                 if (result.probabilities) {
-                    displayText += '<br><br><strong>Match Probabilities:</strong><br>';
-                    for (const [team, prob] of Object.entries(result.probabilities)) {
-                        displayText += `${team}: ${prob}%<br>`;
+                    // Render probability bars (show one decimal place)
+                    for (const [team, probRaw] of Object.entries(result.probabilities)) {
+                        const probNum = Math.max(0, Math.min(100, Number(probRaw)));
+                        const probLabel = probNum.toFixed(1);
+                        const row = document.createElement('div');
+                        row.className = 'prob-row';
+
+                        const label = document.createElement('div');
+                        label.className = 'prob-label';
+                        label.textContent = `${team} — ${probLabel}%`;
+
+                        const bar = document.createElement('div');
+                        bar.className = 'prob-bar';
+                        const fill = document.createElement('div');
+                        fill.className = 'prob-fill';
+                        // Highlight predicted team
+                        if (team === result.prediction) {
+                            fill.style.background = 'linear-gradient(90deg, #7c3aed, #06b6d4)';
+                        } else {
+                            fill.style.background = '#cfe7ff';
+                        }
+                        fill.style.width = '0%';
+                        bar.appendChild(fill);
+
+                        row.appendChild(label);
+                        row.appendChild(bar);
+                        probContainer.appendChild(row);
+
+                        // animate fill after insertion (use numeric width)
+                        setTimeout(() => { fill.style.width = probNum + '%'; }, 60);
                     }
                 }
             } else if (result.message) {
-                // Old format
-                displayText = result.message;
+                predictionEl.textContent = result.message;
             }
-            
-            document.getElementById('predictionText').innerHTML = displayText;
+
             document.getElementById('result').classList.remove('hidden');
         } else {
             // Show error
