@@ -1,5 +1,8 @@
-// IPL Teams and Venues data
-const teams = [
+// Teams/venues will be fetched from backend; fallbacks provided
+let teams = [];
+let venues = [];
+
+const fallbackTeams = [
     'Chennai Super Kings',
     'Delhi Capitals',
     'Gujarat Titans',
@@ -12,7 +15,7 @@ const teams = [
     'Sunrisers Hyderabad'
 ];
 
-const venues = [
+const fallbackVenues = [
     'Wankhede Stadium',
     'MA Chidambaram Stadium',
     'M Chinnaswamy Stadium',
@@ -209,5 +212,22 @@ document.getElementById('predictionForm').addEventListener('submit', async funct
     }
 });
 
-// Initialize when page loads
-document.addEventListener('DOMContentLoaded', populateDropdowns);
+// Initialize when page loads: fetch config from backend then populate
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const res = await fetch('http://localhost:5000/config');
+        if (res.ok) {
+            const cfg = await res.json();
+            teams = cfg.teams || fallbackTeams;
+            venues = cfg.venues || fallbackVenues;
+        } else {
+            teams = fallbackTeams;
+            venues = fallbackVenues;
+        }
+    } catch (e) {
+        teams = fallbackTeams;
+        venues = fallbackVenues;
+    }
+
+    populateDropdowns();
+});
