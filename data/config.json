@@ -1,0 +1,26 @@
+{
+  "teams": [
+    "Chennai Super Kings",
+    "Delhi Capitals",
+    "Gujarat Titans",
+    "Kolkata Knight Riders",
+    "Lucknow Super Giants",
+    "Mumbai Indians",
+    "Punjab Kings",
+    "Rajasthan Royals",
+    "Royal Challengers Bangalore",
+    "Sunrisers Hyderabad"
+  ],
+  "venues": [
+    "Wankhede Stadium",
+    "MA Chidambaram Stadium",
+    "M Chinnaswamy Stadium",
+    "Eden Gardens",
+    "Rajiv Gandhi International Stadium",
+    "Arun Jaitley Stadium",
+    "Sawai Mansingh Stadium",
+    "Punjab Cricket Association Stadium, Mohali",
+    "Narendra Modi Stadium, Ahmedabad",
+    "Bharat Ratna Shri Atal Bihari Vajpayee Ekana Cricket Stadium, Lucknow"
+  ]
+}
