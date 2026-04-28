@@ -1,233 +1,149 @@
-// Teams/venues will be fetched from backend; fallbacks provided
+// Frontend script: fetches config from backend, posts prediction requests, and renders a pie chart
+
 let teams = [];
 let venues = [];
-
 const fallbackTeams = [
-    'Chennai Super Kings',
-    'Delhi Capitals',
-    'Gujarat Titans',
-    'Kolkata Knight Riders',
-    'Lucknow Super Giants',
-    'Mumbai Indians',
-    'Punjab Kings',
-    'Rajasthan Royals',
-    'Royal Challengers Bangalore',
-    'Sunrisers Hyderabad'
+    'Chennai Super Kings','Delhi Capitals','Gujarat Titans','Kolkata Knight Riders','Lucknow Super Giants','Mumbai Indians','Punjab Kings','Rajasthan Royals','Royal Challengers Bangalore','Sunrisers Hyderabad'
 ];
-
 const fallbackVenues = [
-    'Wankhede Stadium',
-    'MA Chidambaram Stadium',
-    'M Chinnaswamy Stadium',
-    'Eden Gardens',
-    'Rajiv Gandhi International Stadium',
-    'Arun Jaitley Stadium',
-    'Sawai Mansingh Stadium',
-    'Punjab Cricket Association Stadium, Mohali',
-    'Narendra Modi Stadium, Ahmedabad',
-    'Bharat Ratna Shri Atal Bihari Vajpayee Ekana Cricket Stadium, Lucknow'
+    'Wankhede Stadium','MA Chidambaram Stadium','M Chinnaswamy Stadium','Eden Gardens','Rajiv Gandhi International Stadium','Arun Jaitley Stadium','Sawai Mansingh Stadium','Punjab Cricket Association Stadium, Mohali','Narendra Modi Stadium, Ahmedabad','Bharat Ratna Shri Atal Bihari Vajpayee Ekana Cricket Stadium, Lucknow'
 ];
 
-// Store original team options
 let originalTeamOptions = {};
+let probChart = null;
 
-// Populate dropdowns
 function populateDropdowns() {
     const team1Select = document.getElementById('team1');
     const team2Select = document.getElementById('team2');
     const tossWinnerSelect = document.getElementById('toss_winner');
     const venueSelect = document.getElementById('venue');
 
-    // Populate teams for Team 1
+    // clear any existing options (except placeholder)
+    team1Select.innerHTML = '<option value="">Select Team 1</option>';
+    team2Select.innerHTML = '<option value="">Select Team 2</option>';
+    tossWinnerSelect.innerHTML = '<option value="">Select Toss Winner</option>';
+    venueSelect.innerHTML = '<option value="">Select Venue</option>';
+
     teams.forEach(team => {
-        const option1 = document.createElement('option');
-        option1.value = team;
-        option1.textContent = team;
-        team1Select.appendChild(option1);
+        const opt1 = document.createElement('option'); opt1.value = team; opt1.textContent = team; team1Select.appendChild(opt1);
+        const opt2 = document.createElement('option'); opt2.value = team; opt2.textContent = team; team2Select.appendChild(opt2);
     });
 
-    // Populate teams for Team 2 (all teams initially)
-    teams.forEach(team => {
-        const option2 = document.createElement('option');
-        option2.value = team;
-        option2.textContent = team;
-        team2Select.appendChild(option2);
-    });
-
-    // Store original Team 2 options (just the teams, not the placeholder)
     originalTeamOptions.team2 = [...teams];
 
-    // Populate venues
-    venues.forEach(venue => {
-        const option = document.createElement('option');
-        option.value = venue;
-        option.textContent = venue;
-        venueSelect.appendChild(option);
+    venues.forEach(v => {
+        const o = document.createElement('option'); o.value = v; o.textContent = v; venueSelect.appendChild(o);
     });
 
-    // Add event listeners
     team1Select.addEventListener('change', updateTeam2Options);
     team1Select.addEventListener('change', updateTossWinnerOptions);
-    document.getElementById('team2').addEventListener('change', updateTossWinnerOptions);
+    team2Select.addEventListener('change', updateTossWinnerOptions);
 }
 
-// Update Team 2 options when Team 1 is selected
 function updateTeam2Options() {
     const team1Select = document.getElementById('team1');
     const team2Select = document.getElementById('team2');
-    const selectedTeam1 = team1Select.value;
-
-    // Clear all Team 2 options
+    const selected = team1Select.value;
     team2Select.innerHTML = '<option value="">Select Team 2</option>';
-
-    // Add only teams that are not Team 1
-    originalTeamOptions.team2.forEach(team => {
-        if (team !== selectedTeam1) {
-            const newOption = document.createElement('option');
-            newOption.value = team;
-            newOption.textContent = team;
-            team2Select.appendChild(newOption);
-        }
-    });
-
-    team2Select.value = ''; // Reset selection
+    originalTeamOptions.team2.forEach(t => { if (t !== selected) { const o = document.createElement('option'); o.value=t; o.textContent=t; team2Select.appendChild(o);} });
 }
 
-// Update Toss Winner options when teams are selected
 function updateTossWinnerOptions() {
     const team1Select = document.getElementById('team1');
     const team2Select = document.getElementById('team2');
     const tossWinnerSelect = document.getElementById('toss_winner');
-    const selectedTeam1 = team1Select.value;
-    const selectedTeam2 = team2Select.value;
+    const a = team1Select.value, b = team2Select.value;
 
-    // Clear Toss Winner options except first
-    while (tossWinnerSelect.options.length > 1) tossWinnerSelect.remove(1);
-
-    // Add only the two selected teams
-    if (selectedTeam1) {
-        const option1 = document.createElement('option');
-        option1.value = selectedTeam1;
-        option1.textContent = selectedTeam1;
-        tossWinnerSelect.appendChild(option1);
-    }
-
-    if (selectedTeam2) {
-        const option2 = document.createElement('option');
-        option2.value = selectedTeam2;
-        option2.textContent = selectedTeam2;
-        tossWinnerSelect.appendChild(option2);
-    }
-
-    tossWinnerSelect.value = ''; // Reset selection
+    tossWinnerSelect.innerHTML = '<option value="">Select Toss Winner</option>';
+    if (a) { const o = document.createElement('option'); o.value=a; o.textContent=a; tossWinnerSelect.appendChild(o); }
+    if (b) { const o = document.createElement('option'); o.value=b; o.textContent=b; tossWinnerSelect.appendChild(o); }
 }
 
-// Handle form submission
-document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+async function postPredict(data) {
+    const url = 'http://127.0.0.1:5000/predict';
+    const res = await fetch(url, {
+        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data)
+    });
+    return res;
+}
+
+function clearResultArea() {
+    document.getElementById('predictionText').textContent = '';
+    document.getElementById('probabilities').innerHTML = '';
+    const canvas = document.getElementById('probChart');
+    if (probChart) { try { probChart.destroy(); } catch(e){} probChart = null; }
+}
+
+document.getElementById('predictionForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-
     const submitBtn = document.querySelector('.predict-btn');
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Predicting...';
-
-    // Hide previous results
-    document.getElementById('result').classList.add('hidden');
+    submitBtn.disabled = true; submitBtn.textContent = 'Predicting...';
     document.getElementById('error').classList.add('hidden');
+    clearResultArea();
 
-    // Get form data
-    const formData = new FormData(e.target);
-    const data = Object.fromEntries(formData);
+    const formData = new FormData(e.target); const data = Object.fromEntries(formData);
 
     try {
-        // Send POST request to backend
-        const response = await fetch('http://localhost:5000/predict', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            // New UI: show a clear prediction and probability bars (if available)
-            const predictionEl = document.getElementById('predictionText');
-            const probContainer = document.getElementById('probabilities');
-            probContainer.innerHTML = '';
-
-                if (result.prediction) {
-                predictionEl.textContent = result.prediction;
-
-                if (result.probabilities) {
-                    // Render probability bars (show one decimal place)
-                    for (const [team, probRaw] of Object.entries(result.probabilities)) {
-                        const probNum = Math.max(0, Math.min(100, Number(probRaw)));
-                        const probLabel = probNum.toFixed(1);
-                        const row = document.createElement('div');
-                        row.className = 'prob-row';
-
-                        const label = document.createElement('div');
-                        label.className = 'prob-label';
-                        label.textContent = `${team} — ${probLabel}%`;
-
-                        const bar = document.createElement('div');
-                        bar.className = 'prob-bar';
-                        const fill = document.createElement('div');
-                        fill.className = 'prob-fill';
-                        // Highlight predicted team
-                        if (team === result.prediction) {
-                            fill.style.background = 'linear-gradient(90deg, #7c3aed, #06b6d4)';
-                        } else {
-                            fill.style.background = '#cfe7ff';
-                        }
-                        fill.style.width = '0%';
-                        bar.appendChild(fill);
-
-                        row.appendChild(label);
-                        row.appendChild(bar);
-                        probContainer.appendChild(row);
-
-                        // animate fill after insertion (use numeric width)
-                        setTimeout(() => { fill.style.width = probNum + '%'; }, 60);
-                    }
-                }
-            } else if (result.message) {
-                predictionEl.textContent = result.message;
-            }
-
-            document.getElementById('result').classList.remove('hidden');
-        } else {
-            // Show error
-            document.getElementById('errorText').textContent = result.error || 'An error occurred';
+        const response = await postPredict(data);
+        const result = await response.json().catch(()=>({}));
+        if (!response.ok) {
+            document.getElementById('errorText').textContent = result.error || 'Prediction failed';
             document.getElementById('error').classList.remove('hidden');
+            return;
         }
-    } catch (error) {
-        console.error('Error:', error);
+
+        // success
+        document.getElementById('predictionText').textContent = result.prediction || '';
+        if (result.probabilities && Object.keys(result.probabilities).length) {
+            const entries = Object.entries(result.probabilities);
+            const labels = entries.map(e=>e[0]);
+            const values = entries.map(e=>Number(e[1]));
+
+            // textual list
+            const container = document.getElementById('probabilities');
+            entries.forEach(([team, p])=>{
+                const row = document.createElement('div'); row.className='prob-row'; row.textContent = `${team} — ${Number(p).toFixed(1)}%`; container.appendChild(row);
+            });
+
+            // determine max/min indices
+            const maxIndex = values.indexOf(Math.max(...values));
+            const minIndex = values.indexOf(Math.min(...values));
+            const colors = values.map((_,i)=> i===maxIndex? '#10b981' : i===minIndex? '#ef4444' : '#60a5fa');
+
+            // draw pie
+            try {
+                const ctx = document.getElementById('probChart').getContext('2d');
+                if (probChart) { probChart.destroy(); probChart = null; }
+                probChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: { labels: labels, datasets: [{ data: values, backgroundColor: colors, borderColor: '#fff', borderWidth: 2 }]},
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { color: '#0f172a' } }
+                        }
+                    }
+                });
+            } catch (err) { console.warn('Chart error', err); }
+        }
+
+        document.getElementById('result').classList.remove('hidden');
+    } catch (err) {
+        console.error(err);
         document.getElementById('errorText').textContent = 'Failed to connect to the server. Make sure the backend is running.';
         document.getElementById('error').classList.remove('hidden');
     } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Predict Winner';
+        submitBtn.disabled = false; submitBtn.textContent = 'Predict Winner';
     }
 });
 
-// Initialize when page loads: fetch config from backend then populate
+// load config then populate
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-        const res = await fetch('http://localhost:5000/config');
-        if (res.ok) {
-            const cfg = await res.json();
-            teams = cfg.teams || fallbackTeams;
-            venues = cfg.venues || fallbackVenues;
-        } else {
-            teams = fallbackTeams;
-            venues = fallbackVenues;
-        }
-    } catch (e) {
-        teams = fallbackTeams;
-        venues = fallbackVenues;
-    }
-
+        const res = await fetch('http://127.0.0.1:5000/config');
+        if (res.ok) { const cfg = await res.json(); teams = cfg.teams || fallbackTeams; venues = cfg.venues || fallbackVenues; }
+        else { teams = fallbackTeams; venues = fallbackVenues; }
+    } catch (e) { teams = fallbackTeams; venues = fallbackVenues; }
     populateDropdowns();
 });
